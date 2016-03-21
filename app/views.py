@@ -5,9 +5,60 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 
 This file creates your application.
 """
-
+import os
+import smtplib
 from app import app
 from flask import render_template, request, redirect, url_for
+from flask.ext.bootstrap import Bootstrap
+from flask.ext.wtf import Form
+from random import randint
+from wtforms import StringField, TextAreaField, SubmitField, FileField, RadioField, HiddenField
+from wtforms.validators import Required, NumberRange, Email
+
+app.config['SECRET_KEY'] = 'hard to guess string'
+bootstrap = Bootstrap(app)
+
+message = """From: {} <{}>
+To: {} <{}>
+Subject: {}
+
+{}
+""" 
+
+
+class ConForm(Form):
+    name = StringField('Please enter your full name', validators=[Required()])
+    email = StringField('Please enter your e-mail address', validators=[Required(),Email()])
+    subject = StringField('Subject', validators=[Required()])
+    msg = TextAreaField('Please enter the message you want to send.', validators=[Required()])
+    submit = SubmitField('Send')
+    
+def sendmsg(subject,msg,toaddr,fromname):
+	fromaddr  = 'qgrant96@gmail.com'
+	toname = 'Cooze'
+	#subject = request.form.subject.data
+    	#msg = request.form.msg.data
+    	#toaddr  = request.form.email.data
+	#fromname = request.form.name.data
+	messagetosend = message.format(
+                             	fromname,
+                             	fromaddr,
+                             	toname,
+                             	toaddr,
+                             	subject,
+                             	msg)
+
+	# Credentials (if needed)
+	username = 'qgrant96@gmail.com'
+	password = 'coozeman11'
+	#password = '{youremailapppassword}''
+	# The actual mail send
+	server = smtplib.SMTP('smtp.gmail.com:587')
+	server.starttls()
+	#server.login(username)
+	server.login(username,password)
+	server.sendmail(fromaddr, toaddr, messagetosend)
+	server.quit()
 
 
 ###
@@ -24,6 +75,19 @@ def home():
 def about():
     """Render the website's about page."""
     return render_template('about.html')
+    
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    """Render the website's contact page."""
+    form=ConForm()
+    
+    if form.validate_on_submit():
+    	#sendmsg('Test','Hello Cooze','quewayne.grant@yahoo.com','Quewayne')
+    	sendmsg(form.subject.data,form.msg.data,form.email.data,form.name.data)
+    	#if request.method== 'POST':
+    		   		
+    return render_template('contact.html',form=form)
+
 
 
 ###
